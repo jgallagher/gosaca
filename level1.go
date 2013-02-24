@@ -26,21 +26,80 @@ func computeSuffixArray1(S, SA []int, k int) {
 			// S[i] is L-type
 			continue
 		}
+
 		// S[i] is S-type; walk back until S[i-1] is L-type or -1
 		for i >= 1 && S[i-1] < 0 {
 			// S[i-1] is also S-type
 			i--
 		}
 
-		if i > 0 {
-			// found LMS starting at S[i] - need to insert it into end of its bucket
-			// by Property 4.1, S[i] holds pointer to the end of the bucket,
-			// but we need to walk backwards if we've already put other LMS suffixes into the same bucket
-			end := ^S[i]
-			for SA[end] != empty {
-				end--
+		if i == 0 {
+			// even if S[0] is S-type, it's not LMS - we're done
+			break
+		}
+
+		// We might need to put multiple LMS substrings into the same bucket.
+		// To avoid an O(n^2) search backwards, we use the same trick here as
+		// is used in induceSortS1, using the tail of the bucket as a counter
+		// and right-shifting buckets that fill up. The logic is identical
+		// (TODO: refactor this logic).
+		c := ^S[i]
+		switch {
+		case SA[c] >= 0:
+			// section 4.2 case 2
+			val := SA[c]
+			for x := c + 1; x < n; x++ {
+				prev := val
+				val = SA[x]
+				SA[x] = prev
+				if val < 0 && val != empty {
+					break
+				}
 			}
-			SA[end] = i
+			fallthrough
+
+		case SA[c] == empty:
+			// section 4.2 case 1
+			if c-1 >= 0 && SA[c-1] == empty {
+				SA[c-1] = i
+				SA[c] = -1
+			} else {
+				SA[c] = i
+			}
+			break
+
+		default:
+			// section 4.2 case 3
+			d := SA[c]
+			pos := c + d - 1
+			if pos >= 0 && SA[pos] == empty {
+				SA[pos] = i
+				SA[c]--
+			} else {
+				// right-shift SA[pos+1:c-1], inserting i into SA[pos+1]
+				prev := i
+				for x := pos + 1; x <= c; x++ {
+					val := SA[x]
+					SA[x] = prev
+					prev = val
+				}
+			}
+			break
+		}
+	}
+	// Continuation of the bucket-tail-as-counter trick - we need
+	// to fix any buckets that still have counters.
+	for i := n - 1; i >= 0; i-- {
+		if SA[i] == empty || SA[i] >= 0 {
+			continue
+		}
+		d := SA[i]
+		pos := i + d - 1
+		prev := empty
+		for x := pos + 1; x <= i; x++ {
+			val := SA[x]
+			SA[x] = prev
+			prev = val
 		}
 	}
 
@@ -67,7 +126,7 @@ func computeSuffixArray1(S, SA []int, k int) {
 	// *********************************************
 
 	// provably, n1 is at most floor(n/2), so the following overlapping works
-	SA1 := SA[:n1] // SA1 overlaps the front of SA
+	SA1 := SA[:n1]  // SA1 overlaps the front of SA
 	work := SA[n1:] // workspace overlaps the rest of SA
 	S1 := SA[n-n1:] // S1 overlaps the end of SA (including part of "work", but rename deals with that correctly)
 	k1 := rename1(S, SA1, work, S1)
@@ -103,6 +162,9 @@ func computeSuffixArray1(S, SA []int, k int) {
 			j--
 		}
 	}
+	if j != -1 {
+		panic("didn't find all the LMS characters we expected")
+	}
 	// Now convert SA1 from renamed values to true values.
 	for i := 0; i < n1; i++ {
 		SA1[i] = S1[SA1[i]]
@@ -123,11 +185,71 @@ func computeSuffixArray1(S, SA []int, k int) {
 		if j == 0 {
 			panic("unexpected j == 0")
 		}
-		// look backwards until we find an empty slot in the bucket
-		for SA[c] != empty {
-			c--
+		// If we've worked our way back to c == i, then all the remaining
+		// SA[0,c] values are already correct, and going into the loop below
+		// with bucket counters will just screw things up.
+		if c == i {
+			SA[c] = j // restore it (we just emptied it out above...)
+			break
 		}
-		SA[c] = j
+
+		// Same explanation for what's going on here as in Stage 1 step 2.
+		switch {
+		case SA[c] >= 0:
+			val := SA[c]
+			for x := c + 1; x < n; x++ {
+				prev := val
+				val = SA[x]
+				SA[x] = prev
+				if val < 0 && val != empty {
+					break
+				}
+			}
+			fallthrough
+
+		case SA[c] == empty:
+			// section 4.2 case 1
+			if c-1 >= 0 && SA[c-1] == empty {
+				SA[c-1] = j
+				SA[c] = -1
+			} else {
+				SA[c] = j
+			}
+			break
+
+		default:
+			// section 4.2 case 3
+			d := SA[c]
+			pos := c + d - 1
+			if pos >= 0 && SA[pos] == empty {
+				SA[pos] = j
+				SA[c]--
+			} else {
+				// right-shift SA[pos+1:c-1], inserting j into SA[pos+1]
+				prev := j
+				for x := pos + 1; x <= c; x++ {
+					val := SA[x]
+					SA[x] = prev
+					prev = val
+				}
+			}
+			break
+		}
+	}
+
+	// Remove any leftover bucket counters and right-shift buckets.
+	for i := n - 1; i >= 0; i-- {
+		if SA[i] == empty || SA[i] >= 0 {
+			continue
+		}
+		d := SA[i]
+		pos := i + d - 1
+		prev := empty
+		for x := pos + 1; x <= i; x++ {
+			val := SA[x]
+			SA[x] = prev
+			prev = val
+		}
 	}
 
 	// step 3 - induced sort the L-type suffixes of S into their buckets
