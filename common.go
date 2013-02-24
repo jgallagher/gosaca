@@ -26,22 +26,24 @@ func lmsSubstringLength0(s []byte) int {
 	return n + 1 // add one to indicate substring ended with the sentinel
 }
 
-// this function is *exactly* the same as lmsSubstringLength0, but s is an []int
+// Same pre-condition and return value as lmsSubstringLength0, but
+// our checks for L- and S-type suffixes are much simpler since every
+// character knows which type it is.
 func lmsSubstringLength1(s []int) int {
 	n := len(s)
-	for i := 2; i < n; i++ {
-		if s[i] < s[i-1] {
-			// s[i-1] is L-type; move on to step 2
-			for j := i; j < n; j++ {
-				if s[j] > s[j-1] {
-					return i
-				} else if s[j] < s[j-1] {
-					i = j + 1
+	for i := 1; i < n; i++ {
+		// If s is really LMS, we are guaranteed to hit this if at some point.
+		if s[i] >= 0 {
+			// S[i] is L-type; move on to step 2
+			for j := i + 1; j < n; j++ {
+				if s[j] < 0 {
+					return j
 				}
 			}
+			return n + 1
 		}
 	}
-	return n + 1 // add one to indicate substring ended with the sentinel
+	panic("not reached")
 }
 
 // for level 0, rename the LMS substrings sitting in SA1, and return the new alphabet size (k1)
