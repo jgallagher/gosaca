@@ -73,6 +73,7 @@ func TestBasic(t *testing.T) {
 		[]byte("naxkmuquvkhngkcqalbgpdxjkalbvrmbqscyikqdhrvvijkfngfikxtvalsmobje"),
 		[]byte("dxjpmcwlvmuswgfatoqolxcicbbvgbvrhwvibjbliiqcbolxcfnajixxbskjylcfxuhgvrwcfqahe"),
 		[]byte("tqxqbajhitxealorzfbmiulasimxpfxqvzenmdjhththzmyxrsqakcoqunzgopagkoevslbyndymbpiyswsdngoyuipxfxmswvkhu"),
+		[]byte("hngsmqhsuuwwqdwueftduujrxiyygqskpczwoyibotyqdfkdoayaujteffqmavwjkrgpbqwiobmkglovzhgdiuimkffjwpqusynihwkokduowszlhefkskkfkefbwilfzvfyzsamfkavfjoyfekfamqvtamfmniazidowdakbhedhzwzdanjavtmgciicmewqtrbcvmbljuhostzjojqzdtegzquljdhdwzqhfojvctkzekxwurtralnipuicjbol"),
 		[]byte("vxijixkikjtgfxpwdizlmgkslnmtdiaftiexzfkppkqwanbzgvibonysykramrtklvnqbljynrddqyqlbtpugakabinvvuzpqfxvbefhopzvgmeasomnmhnghdatmobksibaipjtvmufpqstnojqjyfmhibltyafjjednaywgpgrglhxonkhibsrlmxvubwecqeddpzpksvjtsimgtyrpvtnqrfsgolsznbdtbuttgcnlvslnmmnjlnhepapdbsbhdrvqbmtxomtty"),
 		[]byte("bbsomwccexbwzqmeqdgcgymeyavyydmmcowprhahcjvloltsrwbkmuvtiwysdkyxygdojbdaubsbvbluicuhrxbqxhtwuphwaytpvjcgespczoreufogbflleubowaklbcttxyjnaufhdwbzniafrghlyszgolkyjumwzwwjzwcpjjrmbwyzoymgbpypreqsngoulmaxygcazmigmpoajmswefwcflrqxhrqytqogypsyslypgvrihlfeqrxhytbvpggbqubinydvcwtnxbmwlvilhuxnsdewuaovnsvozhnrwhmqrmrutrxjgknujcxabaaqedijbrdytqmndkjlfffauohhmyswdafxweyocylutquvtlpqteuyetgaftlngwcuxhylhdkprvgfvnqncywxftnwghlnqplxfmqxehbsisxcytpmliupvwnjzmuysjjntmwezfuxauiwbfggkxceayjdkgvghxhztdjmjisbkqallwtloyepczldrcldktggbzowjtjneziyrvnmecpzkodvxizhgnehjhiwwgnmyzbjtjfcktighrbwoibvjkobxgqhbfvguldejsxvgwbfwyanvtsqgtxhnhjecrpxwtovfhgejdczmbwoifsirjfztdjfupitvaljqqiyqqpxlbhwqpwplmysqdvzriqpjdrnkajkywlxtcetbgtvxorbrtpmfayeadiaoymqaetsgocvkmymrwfhpyzylieghmuegoqqjhdelswfllzuykysjzadutkxwgfhdmihvkcfvalofynroljcncdvblnreguoyhyrzhnoubladowjdjhyuazhyapwioxhrdtvmfljazmvbxjtkrwqrkepfctekohrtvsifxvqbzekddplytdwxgudgzsvyvxlxjdyqqmpsimuwvdmjtjpcyctorbdmffbzwxexygppzsdoczuppxiqxnnwewyjyeohpgkglstinafynsoyqtjybrdwsgvssuwcikhhoyhszglpuzmttmwezfknplhzjnapnxlbepxahcjjreysmzdwroclrylkqwoxwstzridtlraybpcohjuvltzypcwqfakgwxyybqeildjyvuiaakwvdduckmsvkyaqyebtgkrflatnlyqhycbrputyqofjfplxdxprfpbvjyifzsjwmnceiaovnqgfzaofjqqoffbrpfxygxlvyekoifiihzryeagcwwglvwbovtffehxamoznrtolqgyfkxlhjpjaqyfefoxlphficbcndpssiosqhkjmegnvpxynsipougnogroestwxamfprtsxffbhslwrnmjyjdolcekuzqwoauamufvqhzsbbpfsvupjscavgpgybgkzsicpgcxukkhgaiyxqauqienozaufwenctcgcibwyfsejfdrujqutiosvfctqroncnggxdjmmpjajsrbpjjsgqulgbbiauxndntroharhqglkjzgkprcwosychvvpfyedjtrcfpgjdmesbhlyzkeukxiesbtkdjpwikdesrjbfiabtufrkoevscabjmxmkdwekstnujocxtzcwlbmafmskhslsredavkpzjhbsfhwxmoauhixwolumhbqffduilfuecubztsqur"),
 	} {
@@ -87,8 +88,8 @@ func TestBasic(t *testing.T) {
 func TestRandom(t *testing.T) {
 	ws := &WorkSpace{}
 	var (
-		seed = 12345
-		nlengths = 5000
+		seed           = 12345
+		nlengths       = 5000
 		testsPerLength = 1
 	)
 
@@ -110,5 +111,20 @@ func TestRandom(t *testing.T) {
 				t.Fatalf("input %s failed: %s", string(input), err)
 			}
 		}
+	}
+}
+
+func Benchmark900K(b *testing.B) {
+	b.StopTimer()
+	ws := &WorkSpace{}
+	input := make([]byte, 900*1000)
+	for i := range input {
+		input[i] = byte(rand.Intn(256))
+	}
+	SA := make([]int, len(input))
+	b.StartTimer()
+
+	for i := 0; i < b.N; i++ {
+		ws.ComputeSuffixArray(input, SA)
 	}
 }
