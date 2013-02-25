@@ -73,6 +73,55 @@ func insertSTypeUsingCounters(SA []int, index, c int) (int, int) {
 	return x0, x1
 }
 
+// Same style of helper function as above, except for section 4.1 (L-type
+// into buckets from head to tail).
+func insertLTypeUsingCounters(SA []int, index, c int) (int, int) {
+	x0, x1 := -1, -1
+	n := len(SA)
+	switch {
+	case SA[c] >= 0:
+		// section 4.1 case 1
+		prev := SA[c]
+		x0, x1 = c, c
+		for x := c - 1; x >= 0; x-- {
+			SA[x], prev = prev, SA[x]
+			x0 = x
+			if prev < 0 && prev != empty {
+				break
+			}
+		}
+		fallthrough
+
+	case SA[c] == empty:
+		// section 4.1 case 1
+		if c+1 < n && SA[c+1] == empty {
+			SA[c+1] = index
+			SA[c] = -1
+		} else {
+			SA[c] = index
+		}
+		break
+
+	default:
+		// section 4.1 case 3
+		d := SA[c]
+		pos := c - d + 1
+		if pos < n && SA[pos] == empty {
+			SA[pos] = index
+			SA[c]--
+		} else {
+			// left-shift SA[c+1:pos-1], inserting index into SA[pos-1]
+			x0, x1 = c, pos-1
+			prev := index
+			for x := pos - 1; x >= c; x-- {
+				SA[x], prev = prev, SA[x]
+			}
+		}
+	}
+
+	return x0, x1
+}
+
 // recursive version of ComputeSuffixArray for levels 1+
 func computeSuffixArray1(S, SA []int, k int) {
 	n := len(S)
@@ -263,72 +312,18 @@ func induceSortL1(S, SA []int) {
 			continue
 		}
 
-		switch {
-		case SA[c] >= 0:
-			// section 4.1 case 2
-			// left shift the previous bucket until we find the head
-			// NOT MENTIONED IN PAPER: if we overwrite SA[i], we need
-			// to *stay here* for the next iteration
-			val := SA[c]
-			overwroteSAi := (c == i)
-			// TODO clean this up
-			stop := false
-			for x := c - 1; x >= 0 && !stop; x-- {
-				prev := val
-				val = SA[x]
-				if val < 0 && val != empty {
-					stop = true
-				}
-				SA[x] = prev
-				if x == i {
-					overwroteSAi = true
-				}
-			}
-			if overwroteSAi {
-				// decrement i; it will be incremented by the for loop, forcing us to look at SA[i] again next time
-				i--
-			}
-			fallthrough // we now know SA[c] is empty so fall through
-
-		case SA[c] == empty:
-			// section 4.1 case 1
-			if c+1 < n && SA[c+1] == empty {
-				SA[c+1] = j
-				SA[c] = -1
-			} else {
-				SA[c] = j
-			}
-			break
-
-		default:
-			// section 4.1 case 3 (SA[c] is a counter)
-			d := SA[c]
-			pos := c - d + 1
-			if pos < n && SA[pos] == empty {
-				SA[pos] = j
-				SA[c]--
-			} else {
-				// left-shift SA[c+1:pos-1], inserting j into SA[pos-1]
-				prev := j
-				overwroteSAi := (c == i)
-				for x := pos - 1; x >= c; x-- {
-					val := SA[x]
-					SA[x] = prev
-					prev = val
-					if x == i {
-						overwroteSAi = true
-					}
-				}
-				if overwroteSAi {
-					i--
-				}
-			}
-			break
+		// insert j into its bucket; if we overwrite SA[i], we need to stay
+		// here and look at it again in the next pass
+		x0, x1 := insertLTypeUsingCounters(SA, j, c)
+		if i >= x0 && i <= x1 {
+			i--
 		}
 	}
 
 	// NOT MENTIONED IN PAPER: We need to go back over SA and fix
 	// any leftover counter values via left shifting the buckets appropriately.
+	// This is the moral equivalent of fixLMSBucketCounters, but we only ever
+	// do this once, so didn't bother extracting it into its own function.
 	for i := 0; i < n; i++ {
 		if SA[i] == empty || SA[i] >= 0 {
 			continue
@@ -337,9 +332,7 @@ func induceSortL1(S, SA []int) {
 		pos := i - d + 1
 		prev := empty
 		for x := pos - 1; x >= i; x-- {
-			val := SA[x]
-			SA[x] = prev
-			prev = val
+			SA[x], prev = prev, SA[x]
 		}
 	}
 }
