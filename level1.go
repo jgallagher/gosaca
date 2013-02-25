@@ -20,19 +20,22 @@ func fixLMSBucketCounters(SA []int) {
 	}
 }
 
-// During step 2 of stages 1 and 4, we need to insert LMS suffixes into buckets
-// from the end to the tail. We use the same algorithm as is described in
-// section 4.2. This function encompasses the logic for how to insert a
-// particular suffix starting at the given index into the bucket that ends at
-// the given position (c).
-func insertLmsIntoBucketFromEnd(SA []int, index, c int) {
+// This helper function implements the logic described in section 4.2 to
+// insert an S-type value into its bucket from the end, reusing the ends of
+// buckets as counters. If we have to shift a bucket around, the two returned
+// integers are the start and end positions of SA that were modified.  If we
+// don't have to do any shifting, we return -1, -1.
+func insertSTypeUsingCounters(SA []int, index, c int) (int, int) {
+	x0, x1 := -1, -1
 	n := len(SA)
 	switch {
 	case SA[c] >= 0:
 		// section 4.2 case 2
 		prev := SA[c]
+		x0, x1 = c, c
 		for x := c + 1; x < n; x++ {
 			SA[x], prev = prev, SA[x]
+			x1 = x
 			if prev < 0 && prev != empty {
 				break
 			}
@@ -58,6 +61,7 @@ func insertLmsIntoBucketFromEnd(SA []int, index, c int) {
 			SA[c]--
 		} else {
 			// right-shift SA[pos+1:c-1], inserting i into SA[pos+1]
+			x0, x1 = pos + 1, c
 			prev := index
 			for x := pos + 1; x <= c; x++ {
 				SA[x], prev = prev, SA[x]
@@ -65,6 +69,8 @@ func insertLmsIntoBucketFromEnd(SA []int, index, c int) {
 		}
 		break
 	}
+
+	return x0, x1
 }
 
 // recursive version of ComputeSuffixArray for levels 1+
@@ -105,12 +111,10 @@ func computeSuffixArray1(S, SA []int, k int) {
 			break
 		}
 
-		// We might need to put multiple LMS substrings into the same bucket.
-		// To avoid an O(n^2) search backwards, we use the same trick here as
-		// is used in induceSortS1, using the tail of the bucket as a counter
-		// and right-shifting buckets that fill up. The logic is identical
-		// (TODO: refactor this logic).
-		insertLmsIntoBucketFromEnd(SA, i, ^S[i])
+		// Insertion of the LMS strings is identical to insertions of S-type
+		// strings described in section 4.2, but we don't care about the
+		// returned values.
+		insertSTypeUsingCounters(SA, i, ^S[i])
 	}
 
 	// Remove any leftover bucket counters.
@@ -207,7 +211,7 @@ func computeSuffixArray1(S, SA []int, k int) {
 		}
 
 		// Same explanation for what's going on here as in Stage 1 step 2.
-		insertLmsIntoBucketFromEnd(SA, j, c)
+		insertSTypeUsingCounters(SA, j, c)
 	}
 
 	// Remove any leftover bucket counters.
@@ -356,63 +360,11 @@ func induceSortS1(S, SA []int) {
 			continue
 		}
 
-		switch {
-		case SA[c] >= 0:
-			// section 4.2 case 2
-			val := SA[c]
-			overwroteSAi := (c == i)
-			stop := false
-			for x := c + 1; x < n && !stop; x++ {
-				prev := val
-				val = SA[x]
-				if val < 0 && val != empty {
-					stop = true
-				}
-				SA[x] = prev
-				if x == i {
-					overwroteSAi = true
-				}
-			}
-			if overwroteSAi {
-				i++
-			}
-			fallthrough
-
-		case SA[c] == empty:
-			// section 4.2 case 1 
-			if c-1 >= 0 && SA[c-1] == empty {
-				SA[c-1] = j
-				SA[c] = -1
-			} else {
-				SA[c] = j
-			}
-			break
-
-		default:
-			// section 4.2 case 3
-			d := SA[c]
-			pos := c + d - 1
-			if pos >= 0 && SA[pos] == empty {
-				SA[pos] = j
-				SA[c]--
-			} else {
-				// right-shift SA[pos+1:c-1], inserting j into SA[pos+1]
-				prev := j
-				overwroteSAi := (c == i) // TODO - can default to false?
-				for x := pos + 1; x <= c; x++ {
-					val := SA[x]
-					SA[x] = prev
-					prev = val
-					if x == i {
-						overwroteSAi = true
-					}
-				}
-				if overwroteSAi {
-					i++
-				}
-			}
-			break
+		// insert j into its bucket; if we overwrite SA[i], we need to stay
+		// here and look at it again in the next pass
+		x0, x1 := insertSTypeUsingCounters(SA, j, c)
+		if i >= x0 && i <= x1 {
+			i++
 		}
 	}
-	// TODO PICKUP AT LINE 320
 }
