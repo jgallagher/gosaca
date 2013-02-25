@@ -20,6 +20,53 @@ func fixLMSBucketCounters(SA []int) {
 	}
 }
 
+// During step 2 of stages 1 and 4, we need to insert LMS suffixes into buckets
+// from the end to the tail. We use the same algorithm as is described in
+// section 4.2. This function encompasses the logic for how to insert a
+// particular suffix starting at the given index into the bucket that ends at
+// the given position (c).
+func insertLmsIntoBucketFromEnd(SA []int, index, c int) {
+	n := len(SA)
+	switch {
+	case SA[c] >= 0:
+		// section 4.2 case 2
+		prev := SA[c]
+		for x := c + 1; x < n; x++ {
+			SA[x], prev = prev, SA[x]
+			if prev < 0 && prev != empty {
+				break
+			}
+		}
+		fallthrough
+
+	case SA[c] == empty:
+		// section 4.2 case 1
+		if c-1 >= 0 && SA[c-1] == empty {
+			SA[c-1] = index
+			SA[c] = -1
+		} else {
+			SA[c] = index
+		}
+		break
+
+	default:
+		// section 4.2 case 3
+		d := SA[c]
+		pos := c + d - 1
+		if pos >= 0 && SA[pos] == empty {
+			SA[pos] = index
+			SA[c]--
+		} else {
+			// right-shift SA[pos+1:c-1], inserting i into SA[pos+1]
+			prev := index
+			for x := pos + 1; x <= c; x++ {
+				SA[x], prev = prev, SA[x]
+			}
+		}
+		break
+	}
+}
+
 // recursive version of ComputeSuffixArray for levels 1+
 func computeSuffixArray1(S, SA []int, k int) {
 	n := len(S)
@@ -63,49 +110,7 @@ func computeSuffixArray1(S, SA []int, k int) {
 		// is used in induceSortS1, using the tail of the bucket as a counter
 		// and right-shifting buckets that fill up. The logic is identical
 		// (TODO: refactor this logic).
-		c := ^S[i]
-		switch {
-		case SA[c] >= 0:
-			// section 4.2 case 2
-			val := SA[c]
-			for x := c + 1; x < n; x++ {
-				prev := val
-				val = SA[x]
-				SA[x] = prev
-				if val < 0 && val != empty {
-					break
-				}
-			}
-			fallthrough
-
-		case SA[c] == empty:
-			// section 4.2 case 1
-			if c-1 >= 0 && SA[c-1] == empty {
-				SA[c-1] = i
-				SA[c] = -1
-			} else {
-				SA[c] = i
-			}
-			break
-
-		default:
-			// section 4.2 case 3
-			d := SA[c]
-			pos := c + d - 1
-			if pos >= 0 && SA[pos] == empty {
-				SA[pos] = i
-				SA[c]--
-			} else {
-				// right-shift SA[pos+1:c-1], inserting i into SA[pos+1]
-				prev := i
-				for x := pos + 1; x <= c; x++ {
-					val := SA[x]
-					SA[x] = prev
-					prev = val
-				}
-			}
-			break
-		}
+		insertLmsIntoBucketFromEnd(SA, i, ^S[i])
 	}
 
 	// Remove any leftover bucket counters.
@@ -202,47 +207,7 @@ func computeSuffixArray1(S, SA []int, k int) {
 		}
 
 		// Same explanation for what's going on here as in Stage 1 step 2.
-		switch {
-		case SA[c] >= 0:
-			val := SA[c]
-			for x := c + 1; x < n; x++ {
-				prev := val
-				val = SA[x]
-				SA[x] = prev
-				if val < 0 && val != empty {
-					break
-				}
-			}
-			fallthrough
-
-		case SA[c] == empty:
-			// section 4.2 case 1
-			if c-1 >= 0 && SA[c-1] == empty {
-				SA[c-1] = j
-				SA[c] = -1
-			} else {
-				SA[c] = j
-			}
-			break
-
-		default:
-			// section 4.2 case 3
-			d := SA[c]
-			pos := c + d - 1
-			if pos >= 0 && SA[pos] == empty {
-				SA[pos] = j
-				SA[c]--
-			} else {
-				// right-shift SA[pos+1:c-1], inserting j into SA[pos+1]
-				prev := j
-				for x := pos + 1; x <= c; x++ {
-					val := SA[x]
-					SA[x] = prev
-					prev = val
-				}
-			}
-			break
-		}
+		insertLmsIntoBucketFromEnd(SA, j, c)
 	}
 
 	// Remove any leftover bucket counters.
