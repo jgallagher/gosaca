@@ -89,17 +89,7 @@ func (ws *WorkSpace) ComputeSuffixArray(S []byte, SA []int) {
 	// *********************************************
 	// Stage 3: Sort recursively
 	// *********************************************
-	if k1 == n1 {
-		for i := 0; i < n1; i++ {
-			if S1[i] < 0 {
-				SA1[^S1[i]] = i
-			} else {
-				SA1[S1[i]] = i
-			}
-		}
-	} else {
-		computeSuffixArray1(S1, SA1, k1)
-	}
+	sortRecursively(S1, SA1, k1)
 
 	// NOT DESCRIBED IN PAPER BUT STILL NECESSARY (see SA-IS)
 	// We need to undo the renaming of the LMS suffixes.

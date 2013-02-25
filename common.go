@@ -198,5 +198,18 @@ func buildS1FromZ1(S1, SA1, work []int) {
 			S1[n1-1-i] = ^(S1[n1-1-i] + SA1[c] - 1)
 		}
 	}
+}
 
+func sortRecursively(S1, SA1 []int, k1 int) {
+	if k1 == len(S1) {
+		for i := 0; i < k1; i++ {
+			if S1[i] < 0 {
+				SA1[^S1[i]] = i
+			} else {
+				SA1[S1[i]] = i
+			}
+		}
+	} else {
+		computeSuffixArray1(S1, SA1, k1)
+	}
 }
