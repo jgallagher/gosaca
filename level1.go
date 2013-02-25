@@ -168,12 +168,11 @@ func computeSuffixArray1(S, SA []int, k int) {
 
 	// compact all the now-sorted LMS substrings into the first n1 positions of SA
 	n1 := 0
-	for i := 0; i < n; i++ {
-		if SA[i] > 0 && // S[0] is not LMS by definition
-			S[SA[i]] < 0 && // S[SA[i]] is S-type
-			S[SA[i]-1] >= 0 { // S[SA[i-1]] is L-type
-			// S[i] is LMS
-			SA[n1] = SA[i]
+	for _, s := range SA {
+		if s != 0 && // S[0] is not LMS by definition
+		S[s] < 0 && // S[s] is S-type
+		S[s-1] >= 0 { // S[s-1] is L-type
+			SA[n1] = s
 			n1++
 		}
 	}
@@ -217,8 +216,8 @@ func computeSuffixArray1(S, SA []int, k int) {
 		panic("didn't find all the LMS characters we expected")
 	}
 	// Now convert SA1 from renamed values to true values.
-	for i := 0; i < n1; i++ {
-		SA1[i] = S1[SA1[i]]
+	for i, s := range SA1 {
+		SA1[i] = S1[s]
 	}
 
 	// *********************************************
@@ -309,11 +308,10 @@ func induceSortL1(S, SA []int) {
 	// any leftover counter values via left shifting the buckets appropriately.
 	// This is the moral equivalent of fixLMSBucketCounters, but we only ever
 	// do this once, so didn't bother extracting it into its own function.
-	for i := 0; i < n; i++ {
-		if SA[i] == empty || SA[i] >= 0 {
+	for i, d := range SA {
+		if d == empty || d >= 0 {
 			continue
 		}
-		d := SA[i]
 		pos := i - d + 1
 		prev := empty
 		for x := pos - 1; x >= i; x-- {

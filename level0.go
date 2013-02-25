@@ -112,8 +112,8 @@ func (ws *WorkSpace) ComputeSuffixArray(S []byte, SA []int) {
 		}
 	}
 	// Now convert SA1 from renamed values to true values.
-	for i := 0; i < n1; i++ {
-		SA1[i] = S1[SA1[i]]
+	for i, s := range SA1 {
+		SA1[i] = S1[s]
 	}
 
 	// *********************************************
@@ -187,8 +187,7 @@ func induceSortL0(S []byte, SA, bkt []int) {
 	bkt[c]++
 
 	// at each step, look at the character *before* S[SA[i]]; if it's L-type, insert it
-	for i := 0; i < n; i++ {
-		SAi := SA[i]
+	for _, SAi := range SA {
 		if SAi <= 0 {
 			// if SA[i] is empty or points to S[0], we don't have a preceding character to check
 			continue
