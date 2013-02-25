@@ -126,15 +126,6 @@ func insertLTypeUsingCounters(SA []int, index, c int) (int, int) {
 func computeSuffixArray1(S, SA []int, k int) {
 	n := len(S)
 
-	// bit-invert any S-type characters in S
-	// TODO - can our caller do this for us as he builds S?
-	for i := n - 2; i >= 0; i-- {
-		if (S[i+1] < 0 && S[i] <= ^S[i+1]) || // S[i+1] is S-type and we're <= it
-			(S[i+1] >= 0 && S[i] < S[i+1]) { // S[i+1] is L-type and we're strictly < it
-			S[i] = ^S[i]
-		}
-	}
-
 	// *********************************************
 	// Stage 1: Induced-sort the LMS-substrings of S
 	// *********************************************
@@ -202,7 +193,11 @@ func computeSuffixArray1(S, SA []int, k int) {
 	// *********************************************
 	if k1 == n1 {
 		for i := 0; i < n1; i++ {
-			SA1[S1[i]] = i
+			if S1[i] < 0 {
+				SA1[^S1[i]] = i
+			} else {
+				SA1[S1[i]] = i
+			}
 		}
 	} else {
 		computeSuffixArray1(S1, SA1, k1)

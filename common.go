@@ -93,7 +93,6 @@ func rename0(S []byte, SA1, work, S1 []int) int {
 	// Z1 is now sitting (sparsely) in work[]
 	// walk work[] from right-to-left and adjust any S-type characters to point to the end of their bucket instead of the beginning
 	Z1pos := len(work) - 1
-	var prevWasLType bool
 	for i := 0; i < n1; i++ {
 		// find next element of Z1
 		for work[Z1pos] >= 0 {
@@ -105,14 +104,15 @@ func rename0(S []byte, SA1, work, S1 []int) int {
 		S1[n1-1-i] = c
 		Z1pos--
 
-		// check and see if c is L-type
-		if i == 0 || c > S1[n1-i] || (prevWasLType && c == S1[n1-i]) {
-			prevWasLType = true
-		} else {
-			// c is S-type; adjust it so it points to the end of its bucket instead of the head
-			// note that in the Z1 construction loop above, we stored the width of each bucket in SA1[c]
-			S1[n1-1-i] += SA1[c] - 1
-			prevWasLType = false
+		// check and see if c is S-type
+		if i > 0 && // S1[n-1] is L-type by definition due to sentinel
+			((S1[n1-i] < 0 && c <= ^S1[n1-i]) || // S1[n1-i] was S-type and we are <= it
+				(S1[n1-i] >= 0 && c < S1[n1-i])) { // S1[n1-i] was L-type and we are < it
+			// Adjust c so it points to the end of its bucket instead of the
+			// head. Note that in the Z1 construction loop above, we stored
+			// the width of each bucket in SA1[c]. Also, bitwise negate it so
+			// the recursive computeSuffixArray1 doesn't have to.
+			S1[n1-1-i] = ^(S1[n1-1-i] + SA1[c] - 1)
 		}
 	}
 
@@ -189,7 +189,6 @@ func rename1(S, SA1, work, S1 []int) int {
 	// Z1 is now sitting (sparsely) in work[]
 	// walk work[] from right-to-left and adjust any S-type characters to point to the end of their bucket instead of the beginning
 	Z1pos := len(work) - 1
-	var prevWasLType bool
 	for i := 0; i < n1; i++ {
 		// find next element of Z1
 		for work[Z1pos] >= 0 {
@@ -201,14 +200,15 @@ func rename1(S, SA1, work, S1 []int) int {
 		S1[n1-1-i] = c
 		Z1pos--
 
-		// check and see if c is L-type
-		if i == 0 || c > S1[n1-i] || (prevWasLType && c == S1[n1-i]) {
-			prevWasLType = true
-		} else {
-			// c is S-type; adjust it so it points to the end of its bucket instead of the head
-			// note that in the Z1 construction loop above, we stored the width of each bucket in SA1[c]
-			S1[n1-1-i] += SA1[c] - 1
-			prevWasLType = false
+		// check and see if c is S-type
+		if i > 0 && // S1[n-1] is L-type by definition due to sentinel
+			((S1[n1-i] < 0 && c <= ^S1[n1-i]) || // S1[n1-i] was S-type and we are <= it
+				(S1[n1-i] >= 0 && c < S1[n1-i])) { // S1[n1-i] was L-type and we are < it
+			// Adjust c so it points to the end of its bucket instead of the
+			// head. Note that in the Z1 construction loop above, we stored
+			// the width of each bucket in SA1[c]. Also, bitwise negate it so
+			// the recursive computeSuffixArray1 doesn't have to.
+			S1[n1-1-i] = ^(S1[n1-1-i] + SA1[c] - 1)
 		}
 	}
 

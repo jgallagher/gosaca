@@ -91,7 +91,11 @@ func (ws *WorkSpace) ComputeSuffixArray(S []byte, SA []int) {
 	// *********************************************
 	if k1 == n1 {
 		for i := 0; i < n1; i++ {
-			SA1[S1[i]] = i
+			if S1[i] < 0 {
+				SA1[^S1[i]] = i
+			} else {
+				SA1[S1[i]] = i
+			}
 		}
 	} else {
 		computeSuffixArray1(S1, SA1, k1)
