@@ -1,5 +1,25 @@
 package gosaca
 
+// After filling in LMS suffixes using the "end of bucket is a counter"
+// algorithm from section 4.2, we need to loop over SA and fix any bucket
+// counters still left.
+func fixLMSBucketCounters(SA []int) {
+	for i := len(SA) - 1; i >= 0; i-- {
+		if SA[i] == empty || SA[i] >= 0 {
+			// SA[i] isn't a counter; move on
+			continue
+		}
+		// right shift all the elements of the bucket, filling the vacated
+		// slot with "empty"
+		d := SA[i]
+		pos := i + d - 1
+		prev := empty
+		for x := pos + 1; x <= i; x++ {
+			SA[x], prev = prev, SA[x]
+		}
+	}
+}
+
 // recursive version of ComputeSuffixArray for levels 1+
 func computeSuffixArray1(S, SA []int, k int) {
 	n := len(S)
@@ -87,21 +107,9 @@ func computeSuffixArray1(S, SA []int, k int) {
 			break
 		}
 	}
-	// Continuation of the bucket-tail-as-counter trick - we need
-	// to fix any buckets that still have counters.
-	for i := n - 1; i >= 0; i-- {
-		if SA[i] == empty || SA[i] >= 0 {
-			continue
-		}
-		d := SA[i]
-		pos := i + d - 1
-		prev := empty
-		for x := pos + 1; x <= i; x++ {
-			val := SA[x]
-			SA[x] = prev
-			prev = val
-		}
-	}
+
+	// Remove any leftover bucket counters.
+	fixLMSBucketCounters(SA)
 
 	// step 3 - induced sort the L-type suffixes of S into their buckets
 	induceSortL1(S, SA)
@@ -237,20 +245,8 @@ func computeSuffixArray1(S, SA []int, k int) {
 		}
 	}
 
-	// Remove any leftover bucket counters and right-shift buckets.
-	for i := n - 1; i >= 0; i-- {
-		if SA[i] == empty || SA[i] >= 0 {
-			continue
-		}
-		d := SA[i]
-		pos := i + d - 1
-		prev := empty
-		for x := pos + 1; x <= i; x++ {
-			val := SA[x]
-			SA[x] = prev
-			prev = val
-		}
-	}
+	// Remove any leftover bucket counters.
+	fixLMSBucketCounters(SA)
 
 	// step 3 - induced sort the L-type suffixes of S into their buckets
 	induceSortL1(S, SA)
