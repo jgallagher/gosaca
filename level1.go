@@ -60,8 +60,8 @@ func insertSTypeUsingCounters(SA []int, index, c int) (int, int) {
 			SA[pos] = index
 			SA[c]--
 		} else {
-			// right-shift SA[pos+1:c-1], inserting i into SA[pos+1]
-			x0, x1 = pos + 1, c
+			// right-shift SA[pos+1:c-1], inserting index into SA[pos+1]
+			x0, x1 = pos+1, c
 			prev := index
 			for x := pos + 1; x <= c; x++ {
 				SA[x], prev = prev, SA[x]
