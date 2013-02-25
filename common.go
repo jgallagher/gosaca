@@ -55,11 +55,9 @@ func rename0(S []byte, SA1, work, S1 []int) int {
 		return 0
 	}
 
-	// clear out working space
-	// TODO - can we avoid this by bitwise-negating the stuff we put in?
-	for i := range work {
-		work[i] = empty
-	}
+	// currently work only holds positive values; we save the time of clearing
+	// it out by inserting bitwise-negated (negative) values so we know which
+	// ones we put in vs which ones just contain old data
 
 	// walk SA1 from left to right, creating Z1 (spread throughout work)
 
@@ -67,7 +65,7 @@ func rename0(S []byte, SA1, work, S1 []int) int {
 	k1 := 1
 	bktHead := 0 // renamed value == head of bucket in SA1 (part of property 4.1)
 	prev := SA1[0]
-	work[prev/2] = bktHead
+	work[prev/2] = ^bktHead
 	SA1[0] = 1 // after we read SA[i], reuse it as a bucket size (needed for post-Z1 step)
 
 	// at each step, we need to see if the LMS substring starting at S[SA1[i]] (S[pos])
@@ -107,7 +105,7 @@ func rename0(S []byte, SA1, work, S1 []int) int {
 			bktHead = i
 			k1++
 		}
-		work[pos/2] = bktHead
+		work[pos/2] = ^bktHead
 		SA1[bktHead]++ // increment bucket size
 		prev = pos
 	}
@@ -118,12 +116,12 @@ func rename0(S []byte, SA1, work, S1 []int) int {
 	var prevWasLType bool
 	for i := 0; i < n1; i++ {
 		// find next element of Z1
-		for work[Z1pos] == empty {
+		for work[Z1pos] >= 0 {
 			Z1pos--
 		}
 
 		// record character (head of bucket, only correct for L-type)
-		c := work[Z1pos]
+		c := ^work[Z1pos]
 		S1[n1-1-i] = c
 		Z1pos--
 
@@ -150,11 +148,9 @@ func rename1(S, SA1, work, S1 []int) int {
 		return 0
 	}
 
-	// clear out working space
-	// TODO - can we avoid this by bitwise-negating the stuff we put in?
-	for i := range work {
-		work[i] = empty
-	}
+	// currently work only holds positive values; we save the time of clearing
+	// it out by inserting bitwise-negated (negative) values so we know which
+	// ones we put in vs which ones just contain old data
 
 	// walk SA1 from left to right, creating Z1 (spread throughout work)
 
@@ -162,7 +158,7 @@ func rename1(S, SA1, work, S1 []int) int {
 	k1 := 1
 	bktHead := 0 // renamed value == head of bucket in SA1 (part of property 4.1)
 	prev := SA1[0]
-	work[prev/2] = bktHead
+	work[prev/2] = ^bktHead
 	SA1[0] = 1 // after we read SA[i], reuse it as a bucket size (needed for post-Z1 step)
 
 	// at each step, we need to see if the LMS substring starting at S[SA1[i]] (S[pos])
@@ -202,7 +198,7 @@ func rename1(S, SA1, work, S1 []int) int {
 			bktHead = i
 			k1++
 		}
-		work[pos/2] = bktHead
+		work[pos/2] = ^bktHead
 		SA1[bktHead]++ // increment bucket size
 		prev = pos
 	}
@@ -213,12 +209,12 @@ func rename1(S, SA1, work, S1 []int) int {
 	var prevWasLType bool
 	for i := 0; i < n1; i++ {
 		// find next element of Z1
-		for work[Z1pos] == empty {
+		for work[Z1pos] >= 0 {
 			Z1pos--
 		}
 
 		// record character (head of bucket, only correct for L-type)
-		c := work[Z1pos]
+		c := ^work[Z1pos]
 		S1[n1-1-i] = c
 		Z1pos--
 
