@@ -26,26 +26,6 @@ func lmsSubstringLength0(s []byte) int {
 	return n + 1 // add one to indicate substring ended with the sentinel
 }
 
-// Same pre-condition and return value as lmsSubstringLength0, but
-// our checks for L- and S-type suffixes are much simpler since every
-// character knows which type it is.
-func lmsSubstringLength1(s []int) int {
-	n := len(s)
-	for i := 1; i < n; i++ {
-		// If s is really LMS, we are guaranteed to hit this if at some point.
-		if s[i] >= 0 {
-			// S[i] is L-type; move on to step 2
-			for j := i + 1; j < n; j++ {
-				if s[j] < 0 {
-					return j
-				}
-			}
-			return n + 1
-		}
-	}
-	panic("not reached")
-}
-
 // for level 0, rename the LMS substrings sitting in SA1, and return the new alphabet size (k1)
 func rename0(S []byte, SA1, work, S1 []int) int {
 	n := len(S)
@@ -139,7 +119,9 @@ func rename0(S []byte, SA1, work, S1 []int) int {
 	return k1
 }
 
-// this function is *exactly* the same as rename0, but S is an []int
+// this function is almost the same as rename0; differences:
+//   (a) S is an []int
+//   (b) our LMS substring comparision is different (and easier)
 func rename1(S, SA1, work, S1 []int) int {
 	n := len(S)
 	n1 := len(SA1)
@@ -168,28 +150,29 @@ func rename1(S, SA1, work, S1 []int) int {
 		SA1[i] = 0 // reused as bucket size
 		diff := false
 
-		// quick first test - if initial character is different we're done
-		if S[prev] != S[pos] {
-			diff = true
-		} else {
-			// TODO - this walks both LMS substrings to calculate their lengths; can we combine this to short-circuit earlier if possible? tricky to do correctly!
-			prevLen := lmsSubstringLength1(S[prev:])
-			posLen := lmsSubstringLength1(S[pos:])
-			if prev+prevLen == n+1 || // S[prev:] ends with sentinel
-				pos+posLen == n+1 || // S[pos:] ends with sentinel
-				prevLen != posLen { // different lengths
+		// walk both strings character-by-character until (a) we get a
+		// difference or (b) we begin the L+ sequence
+		j := 0
+		for j = 0; j < n; j++ {
+			if S[prev+j] != S[pos+j] {
 				diff = true
-			} else {
-				// if we get here:
-				//   (a) first character is the same
-				//   (b) both end before the sentinel
-				//   (c) both have the same length
-				// so we need to check the rest of the characters one-by-one
-				for j := 1; j < prevLen; j++ {
-					if S[prev+j] != S[pos+j] {
-						diff = true
-						break
-					}
+				break
+			} else if S[prev+j] >= 0 {
+				break
+			}
+		}
+
+		if !diff {
+			// both strings started L+ at the same place; now walk until:
+			//  (a) either hits the end (=> different)
+			//  (b) we get a different character (=> different)
+			//  (c) both hit the same S-type value (=> same)
+			for j++; j < n; j++ {
+				if prev+j == n || pos+j == n || S[prev+j] != S[pos+j] {
+					diff = true
+					break
+				} else if S[prev+j] < 0 {
+					break
 				}
 			}
 		}
