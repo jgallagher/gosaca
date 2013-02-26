@@ -19,7 +19,7 @@ The following table compares
 [sa-is](https://sites.google.com/site/yuta256/sais) with gosaca running on a
 2012 Macbook Pro. The comparision is not really fair in many senses (SA-IS is
 an earlier, slightly less efficient algorithm, but it's implemented in
-optimized C code), but here it is nonetheless. Times are in seconds.
+optimized C code); here it is nonetheless. Times are in seconds.
 
 File           |      Size |  sa-is | gosaca
 -------------- | --------: | -----: | -----:
